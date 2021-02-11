@@ -1,0 +1,9 @@
+{
+	"authors": [
+		"outland.karasu@gmail.com"
+	],
+	"copyright": "Copyright © 2021, outland.karasu@gmail.com",
+	"description": "A kalman filter sample implementation.",
+	"license": "BSL-1.0",
+	"name": "kalman-filter"
+}

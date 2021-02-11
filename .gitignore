@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/kalman-filter
+kalman-filter.so
+kalman-filter.dylib
+kalman-filter.dll
+kalman-filter.a
+kalman-filter.lib
+kalman-filter-test-*
+*.exe
+*.o
+*.obj
+*.lst
