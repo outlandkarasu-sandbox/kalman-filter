@@ -1,23 +1,41 @@
-import std.stdio;
+import karasux.random : gaussianDistributionRandom;
 
 struct KalmanFilter(T = real)
 {
-    T opCall(scope auto ref const(T) x) nothrow pure @safe
+    T opCall()(scope auto ref const(T) x) @safe
     {
-        state_ = drift_ + trend_ * state_ + error(stateVarience_);
-        return constant_ + state_ * x + error(errorVarience_);
+        state = drift + trend * state + random(stateVariance);
+        return constant + state * x + random(errorVariance);
     }
 
+    T drift;
+    T trend;
+    T constant;
+    T errorVariance;
+    T stateVariance;
+    T state;
+
 private:
-    T drift_;
-    T trend_;
-    T constant_;
-    T errorVariance_;
-    T stateVarience_;
-    T state_;
+
+    T random(scope ref const(T) variance) const @safe scope
+    {
+        return gaussianDistributionRandom!T() * variance;
+    }
 }
 
 void main()
 {
-	writeln("Edit source/app.d to start your project.");
+    import std.stdio : writeln;
+    import std.range : generate, take;
+
+    KalmanFilter!() kalmanFilter = {
+        drift: 0.0,
+        trend: 1.0,
+        constant: 0.0,
+        errorVariance: 1.0,
+        stateVariance: 1.0,
+        state: 0.0,
+    };
+
+    generate!(() => kalmanFilter(1.0)).take(10).writeln;
 }
