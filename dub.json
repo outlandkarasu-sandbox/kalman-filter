@@ -5,5 +5,11 @@
 	"copyright": "Copyright © 2021, outland.karasu@gmail.com",
 	"description": "A kalman filter sample implementation.",
 	"license": "BSL-1.0",
-	"name": "kalman-filter"
+	"name": "kalman-filter",
+	"dependencies": {
+		"karasux": {
+			"repository": "git+https://github.com/outlandkarasu/karasux.git",
+			"version": "f889b3d631b8a84077cd9baf4c4197660ca11fec"
+		}
+	}
 }
