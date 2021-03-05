@@ -3,10 +3,11 @@
 		"outland.karasu@gmail.com"
 	],
 	"copyright": "Copyright © 2021, outland.karasu@gmail.com",
+	"dependencies": {
+		"karasux": "~>0.0.5",
+		"lbfgsd": "~>1.1.0"
+	},
 	"description": "A kalman filter sample implementation.",
 	"license": "BSL-1.0",
-	"name": "kalman-filter",
-	"dependencies": {
-		"karasux": "~>0.0.5"
-	}
+	"name": "kalman-filter"
 }
