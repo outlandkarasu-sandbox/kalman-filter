@@ -1,4 +1,4 @@
-import std.math : pow;
+import std.math : pow, log;
 
 import karasux.random : gaussianDistributionRandom;
 
@@ -62,6 +62,16 @@ struct KalmanFilter(T = real)
             return pow2(model.trend) * variance + model.stateVariance;
         }
 
+        T estimateError2()(auto scope ref const(T) x, auto scope ref const(T) y) const
+        {
+            return pow2(y - estimateMeasurement(x));
+        }
+
+        @property T estimateErrorVariance()(auto scope ref const(T) x) const
+        {
+            return pow2(x) * variance + model.errorVariance;
+        }
+
         @property T estimateState() const
         {
             return model.estimateState;
@@ -69,8 +79,8 @@ struct KalmanFilter(T = real)
 
         T kalmanGain()(auto scope ref const(T) x) const
         {
-            immutable variance = estimateVariance;
-            return variance * model.trend / (pow2(x) * variance + model.errorVariance);
+            immutable v = estimateVariance;
+            return v * model.trend / (pow2(x) * v + model.errorVariance);
         }
 
         void filtering()(auto scope ref const(T) x, auto scope ref const(T) y)
@@ -79,6 +89,12 @@ struct KalmanFilter(T = real)
             model.lastState = estimateState + k * (y - estimateMeasurement(x));
             variance = (cast(T) 1.0 - x * k) * variance;
         }
+    }
+
+    T likelihood()(auto scope ref const(T) x, auto scope ref const(T) y) @nogc nothrow pure @safe scope
+    {
+        immutable v = estimateErrorVariance(x);
+        return log(v) + estimateError2(x, y) / v;
     }
 
     StateSpaceModel!T model;
@@ -101,23 +117,23 @@ void main()
         trend: 1.0,
         constant: 0.0,
         errorVariance: 1.0,
-        stateVariance: 1.0,
-        lastState: 0.0,
+        stateVariance: 2.0,
+        lastState: 4.0,
     };
     KalmanFilter!() kalmanFilter = {
         model: model,
-        variance: 10000.0,
+        variance: 12.0,
     };
 
-    foreach (i; 0 .. 100)
+    foreach (immutable y; [cast(real) 4.4, 4.0, 3.5, 4.6])
     {
         immutable real x = 1.0;
         immutable ey = kalmanFilter.estimateMeasurement(x);
-        immutable y = model(x);
+        immutable es = kalmanFilter.model.lastState;
         immutable error = y - ey;
         kalmanFilter.filtering(x, y);
-        writefln("x: %s, estimate y: %s, y: %s, error: %s, variance: %s",
-            x, ey, y, error, kalmanFilter.variance);
+        writefln("y: %s, x: %s, es: %s, v: %s, ey: %s, error: %s",
+            y, x, es, kalmanFilter.variance, ey, error);
     }
 }
 
