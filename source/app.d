@@ -1,6 +1,6 @@
 import karasux.random : gaussianDistributionRandom;
 
-struct KalmanFilter(T = real)
+struct StateSpaceModel(T = real)
 {
     T opCall()(scope auto ref const(T) x) @safe
     {
@@ -28,7 +28,7 @@ void main()
     import std.stdio : writeln;
     import std.range : generate, take;
 
-    KalmanFilter!() kalmanFilter = {
+    StateSpaceModel!() model = {
         drift: 0.0,
         trend: 1.0,
         constant: 0.0,
@@ -37,5 +37,6 @@ void main()
         state: 0.0,
     };
 
-    generate!(() => kalmanFilter(1.0)).take(10).writeln;
+    generate!(() => model(1.0)).take(10).writeln;
 }
+
