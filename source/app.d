@@ -2,10 +2,20 @@ import karasux.random : gaussianDistributionRandom;
 
 struct StateSpaceModel(T = real)
 {
-    T opCall()(scope auto ref const(T) x) @safe
+    T opCall()(scope auto ref const(T) x) @safe scope
+    {
+        updateState();
+        return measure(x);
+    }
+
+    T measure()(scope auto ref const(T) x) const @safe scope
+    {
+        return constant + state * x + random(errorVariance);
+    }
+
+    void updateState() @safe scope
     {
         state = drift + trend * state + random(stateVariance);
-        return constant + state * x + random(errorVariance);
     }
 
     T drift;
