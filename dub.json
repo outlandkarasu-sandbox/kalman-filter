@@ -7,9 +7,6 @@
 	"license": "BSL-1.0",
 	"name": "kalman-filter",
 	"dependencies": {
-		"karasux": {
-			"repository": "git+https://github.com/outlandkarasu/karasux.git",
-			"version": "f889b3d631b8a84077cd9baf4c4197660ca11fec"
-		}
+		"karasux": "~>0.0.5"
 	}
 }
