@@ -2,6 +2,11 @@ import kalmand : StateSpaceModel, KalmanFilter;
 
 void main()
 {
+    parameterEstimation();
+}
+
+void estimateAndFiltering()
+{
     import std.stdio : writefln;
 
     StateSpaceModel!real model = {
@@ -30,13 +35,12 @@ void main()
         immutable sv = kalmanFilter.variance;
         writefln("y: %s, es: %s, ev: %s, ey: %s, err: %s, v: %s, k: %s, s: %s, sv: %s",
             d, es, ev, ey, d - ey, v, k, s, sv);
-
     }
 }
 
 void parameterEstimation()
 {
-    import std.stdio : writeln;
+    import std.stdio : writeln, writefln;
     import lbfgsd.solver : SimpleSolver;
 
     immutable(real)[] data = [
@@ -89,5 +93,32 @@ void parameterEstimation()
     real[] parameters = [0.5, 5.0, 3.0];
     solver.solve(parameters);
     parameters.writeln;
+
+    StateSpaceModel!real model = {
+        drift: 0.0,
+        trend: 0.327438, //parameters[0],
+        constant: 0.0,
+        errorVariance: 4.155^^2, // parameters[1],
+        stateVariance: 5.901^^2, // parameters[2],
+        lastState: 0.1,
+    };
+    KalmanFilter!real kalmanFilter = {
+        model: model,
+        variance: 100.0,
+    };
+
+    foreach (d; data)
+    {
+        immutable es = kalmanFilter.estimateState;
+        immutable ev = kalmanFilter.estimateVariance;
+        immutable ey = kalmanFilter.estimateMeasurement(1.0);
+        immutable v = kalmanFilter.estimateErrorVariance(1.0);
+        immutable k = kalmanFilter.kalmanGain(1.0);
+        kalmanFilter.filtering(1.0, d);
+        immutable s = kalmanFilter.estimateState;
+        immutable sv = kalmanFilter.variance;
+        writefln("y: %s, es: %s, ev: %s, ey: %s, err: %s, v: %s, k: %s, s: %s, sv: %s",
+            d, es, ev, ey, d - ey, v, k, s, sv);
+    }
 }
 
