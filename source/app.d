@@ -1,4 +1,5 @@
 import kalmand : StateSpaceModel, KalmanFilter;
+import lbfgsd.math : exp, log;
 
 void main()
 {
@@ -30,11 +31,12 @@ void estimateAndFiltering()
         immutable ey = kalmanFilter.estimateMeasurement(1.0);
         immutable v = kalmanFilter.estimateErrorVariance(1.0);
         immutable k = kalmanFilter.kalmanGain(1.0);
+        immutable ln = kalmanFilter.likelihood(1.0, d);
         kalmanFilter.filtering(1.0, d);
         immutable s = kalmanFilter.estimateState;
         immutable sv = kalmanFilter.variance;
-        writefln("y: %s, es: %s, ev: %s, ey: %s, err: %s, v: %s, k: %s, s: %s, sv: %s",
-            d, es, ev, ey, d - ey, v, k, s, sv);
+        writefln("y: %s, es: %s, ev: %s, ey: %s, err: %s, v: %s, k: %s, s: %s, sv: %s, ln: %s",
+            d, es, ev, ey, d - ey, v, k, s, sv, ln);
     }
 }
 
@@ -66,13 +68,13 @@ void parameterEstimation()
                 drift: 0.0,
                 trend: params[0],
                 constant: 0.0,
-                errorVariance: params[1],
-                stateVariance: params[2],
+                errorVariance: exp(params[1]),
+                stateVariance: exp(params[2]),
                 lastState: 0.1,
             };
             KalmanFilter!T kalmanFilter = {
                 model: model,
-                variance: 20.0,
+                variance: 100.0,
             };
 
             auto logLikelihood = T(0.0);
@@ -96,10 +98,10 @@ void parameterEstimation()
 
     StateSpaceModel!real model = {
         drift: 0.0,
-        trend: 0.327438, //parameters[0],
+        trend: 0.327438,// parameters[0],
         constant: 0.0,
-        errorVariance: 4.155^^2, // parameters[1],
-        stateVariance: 5.901^^2, // parameters[2],
+        errorVariance: 4.155^^2.0, // log(parameters[1]),
+        stateVariance: 5.901^^2.0, // log(parameters[2]),
         lastState: 0.1,
     };
     KalmanFilter!real kalmanFilter = {
@@ -114,11 +116,12 @@ void parameterEstimation()
         immutable ey = kalmanFilter.estimateMeasurement(1.0);
         immutable v = kalmanFilter.estimateErrorVariance(1.0);
         immutable k = kalmanFilter.kalmanGain(1.0);
+        immutable ln = kalmanFilter.likelihood(1.0, d);
         kalmanFilter.filtering(1.0, d);
         immutable s = kalmanFilter.estimateState;
         immutable sv = kalmanFilter.variance;
-        writefln("y: %s, es: %s, ev: %s, ey: %s, err: %s, v: %s, k: %s, s: %s, sv: %s",
-            d, es, ev, ey, d - ey, v, k, s, sv);
+        writefln("y: %s, es: %s, ev: %s, ey: %s, err: %s, v: %s, k: %s, s: %s, sv: %s, ln: %s",
+            d, es, ev, ey, d - ey, v, k, s, sv, ln);
     }
 }
 
