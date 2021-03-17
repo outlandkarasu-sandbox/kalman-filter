@@ -5,7 +5,10 @@
 	"copyright": "Copyright © 2021, outland.karasu@gmail.com",
 	"dependencies": {
 		"karasux": "~>0.0.5",
-		"lbfgsd": "~>1.1.0",
+		"diffengine": {
+			"repository": "git+https://github.com/outlandkarasu/diffengine.git",
+			"version": "e29ec469bb7df8404c7d52156f277b169d8745ea"
+		}
 	},
 	"description": "A kalman filter sample implementation.",
 	"license": "BSL-1.0",

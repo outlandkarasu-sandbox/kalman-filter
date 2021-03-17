@@ -1,49 +1,40 @@
-import kalmand : StateSpaceModel, KalmanFilter;
-import lbfgsd.math : exp, log;
+import kalmand : KalmanFilter;
 
 void main()
 {
-    parameterEstimation();
+    estimateAndFiltering();
+    //parameterEstimation();
 }
 
 void estimateAndFiltering()
 {
     import std.stdio : writefln;
 
-    StateSpaceModel!real model = {
+    alias KF = KalmanFilter!(real, real);
+    alias Parameters = KF.Parameters;
+
+    Parameters parameters = {
         drift: 0.0,
-        trend: 1.0,
-        constant: 0.0,
-        errorVariance: 1.0,
+        tension: 1.0,
+        cons: 0.0,
+        measureVariance: 1.0,
         stateVariance: 4.0,
-        lastState: 4.0,
     };
-    KalmanFilter!real kalmanFilter = {
-        model: model,
-        variance: 12.0,
-    };
+    auto kalmanFilter = KF(parameters, 4.0, 12.0, 1.0);
 
     immutable(real)[] data = [4.4, 4.0, 3.5, 4.6];
     foreach (d; data)
     {
-        immutable es = kalmanFilter.estimateState;
-        immutable ev = kalmanFilter.estimateVariance;
-        immutable ey = kalmanFilter.estimateMeasurement(1.0);
-        immutable v = kalmanFilter.estimateErrorVariance(1.0);
-        immutable k = kalmanFilter.kalmanGain(1.0);
-        immutable ln = kalmanFilter.likelihood(1.0, d);
+        auto ey = kalmanFilter.estimate(1.0);
         kalmanFilter.filtering(1.0, d);
-        immutable s = kalmanFilter.estimateState;
-        immutable sv = kalmanFilter.variance;
-        writefln("y: %s, es: %s, ev: %s, ey: %s, err: %s, v: %s, k: %s, s: %s, sv: %s, ln: %s",
-            d, es, ev, ey, d - ey, v, k, s, sv, ln);
+        writefln("y: %s, ey: %s", d, ey);
     }
 }
 
+/+
 void parameterEstimation()
 {
     import std.stdio : writeln, writefln;
-    import lbfgsd.solver : SimpleSolver;
 
     immutable(real)[] data = [
         0.151,
@@ -88,12 +79,9 @@ void parameterEstimation()
         }
     }
 
-    auto solver = new SimpleSolver!(real, 3);
     Func f;
-    solver.setAutoDiffCost(f);
 
     real[] parameters = [0.5, 5.0, 3.0];
-    solver.solve(parameters);
     parameters.writeln;
 
     StateSpaceModel!real model = {
@@ -124,4 +112,4 @@ void parameterEstimation()
             d, es, ev, ey, d - ey, v, k, s, sv, ln);
     }
 }
-
++/

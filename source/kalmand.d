@@ -1,103 +1,59 @@
 module kalmand;
 
-import lbfgsd.math : square, log;
-import karasux.random : gaussianDistributionRandom;
+import diffengine :
+    Parameter,
+    Differentiable,
+    constant,
+    square;
 
-struct StateSpaceModel(T)
+@safe:
+
+struct KalmanFilter(F, P)
 {
-    T opCall()(scope auto ref const(T) x) @safe scope
+    struct Parameters
     {
-        updateState();
-        return measure(x);
+        P drift;
+        P tension;
+        P cons;
+        P measureVariance;
+        P stateVariance;
     }
 
-    T measure()(scope auto ref const(T) x) const @safe scope
+    @disable this();
+
+    this(Parameters parameters, F initState, F initVariance, F one) nothrow pure scope
     {
-        return constant + lastState * x + random(errorVariance);
+        this.params_ = parameters;
+        this.state_ = initState;
+        this.variance_ = initVariance;
+        this.one_ = one;
     }
 
-    void updateState() @safe scope
+    F estimate(F x) nothrow pure return scope
     {
-        lastState = estimateState + random(stateVariance);
+        estimateState_ = params_.drift + params_.tension * state_;
+        estimateMeasure_ = params_.cons + estimateState_ * x;
+        estimateVariance_ = params_.tension.square * variance_ + params_.stateVariance;
+        return estimateMeasure_;
     }
 
-    const @nogc nothrow pure @safe scope
+    F filtering(F x, F y) nothrow pure scope
     {
-        T estimateMeasurement()(scope auto ref const(T) x) 
-        {
-            return constant + estimateState() * x;
-        }
-
-        @property T estimateState()
-        {
-            return drift + trend * lastState;
-        }
+        auto k = (x * estimateVariance_)
+            / (x.square * estimateVariance_ + params_.measureVariance);
+        state_ = estimateState_ + k * (y - estimateMeasure_);
+        variance_ = (one_ - x * k) * estimateVariance_;
+        return state_;
     }
-
-    T drift;
-    T trend;
-    T constant;
-    T errorVariance;
-    T stateVariance;
-    T lastState;
 
 private:
+    Parameters params_;
+    F one_;
+    F state_;
+    F variance_;
 
-    static T random(scope ref const(T) variance) @safe
-    {
-        return gaussianDistributionRandom!real() * variance;
-    }
-}
-
-struct KalmanFilter(T)
-{
-    @nogc nothrow pure @safe scope
-    {
-        T estimateMeasurement()(auto scope ref const(T) x) const
-        {
-            return model.estimateMeasurement(x);
-        }
-
-        @property T estimateVariance() const
-        {
-            return square(model.trend) * variance + model.stateVariance;
-        }
-
-        T estimateError2()(auto scope ref const(T) x, auto scope ref const(T) y) const
-        {
-            return square(y - estimateMeasurement(x));
-        }
-
-        @property T estimateErrorVariance()(auto scope ref const(T) x) const
-        {
-            return square(x) * estimateVariance + model.errorVariance;
-        }
-
-        @property T estimateState() const
-        {
-            return model.estimateState;
-        }
-
-        T kalmanGain()(auto scope ref const(T) x) const
-        {
-            return x * estimateVariance / estimateErrorVariance(x);
-        }
-
-        void filtering()(auto scope ref const(T) x, auto scope ref const(T) y)
-        {
-            immutable k = kalmanGain(x);
-            model.lastState = estimateState + k * (y - estimateMeasurement(x));
-            variance = (cast(real) 1.0 - x * k) * estimateVariance;
-        }
-    }
-
-    T likelihood()(auto scope ref const(T) x, auto scope ref const(T) y) @nogc nothrow pure @safe scope
-    {
-        immutable v = estimateErrorVariance(x);
-        return log(v) + estimateError2(x, y) / v;
-    }
-
-    StateSpaceModel!T model;
-    T variance;
+    F estimateState_;
+    F estimateVariance_;
+    F estimateMeasure_;
 }
 
