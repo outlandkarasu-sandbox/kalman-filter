@@ -4,7 +4,8 @@ import diffengine :
     Parameter,
     Differentiable,
     constant,
-    square;
+    square,
+    log;
 
 @safe:
 
@@ -39,6 +40,10 @@ struct KalmanFilter(F, P)
 
     F filtering(F x, F y) nothrow pure scope
     {
+        auto error = y - estimateMeasure_;
+        auto errorVariance = estimateVariance_ * x.square + params_.measureVariance;
+        likelyhood_ = likelyhood_ + (log(errorVariance) + error.square / errorVariance);
+
         auto k = (x * estimateVariance_)
             / (x.square * estimateVariance_ + params_.measureVariance);
         state_ = estimateState_ + k * (y - estimateMeasure_);
@@ -55,5 +60,6 @@ private:
     F estimateState_;
     F estimateVariance_;
     F estimateMeasure_;
+    F likelyhood_;
 }
 
