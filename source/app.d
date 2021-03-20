@@ -34,7 +34,7 @@ void estimateAndFiltering()
 void parameterEstimation()
 {
     import std.stdio : writeln, writefln;
-    import diffengine : Differentiable, constant, param, Parameter, zero, one;
+    import diffengine : Differentiable, constant, param, Parameter, zero, one, diffContext;
 
     alias KF = KalmanFilter!(const(Differentiable!real), const(Differentiable!real));
     alias Parameters = KF.Parameters;
@@ -78,4 +78,27 @@ void parameterEstimation()
         kalmanFilter.filtering(oneValue, d.constant);
         writefln("y: %s, ey: %s", d, ey());
     }
+
+    auto lf = kalmanFilter.likelyhood;
+    auto dTension = lf.differentiate(
+        diffContext(tension));
+    writefln("dTension: %s", dTension.diff());
+    auto ddTension = dTension.diff.differentiate(
+        diffContext(tension));
+    writefln("ddTension: %s", ddTension.diff());
+
+    auto dMeasureVariance = lf.differentiate(
+        diffContext(measureVariance));
+    writefln("dMeasureVariance: %s", dMeasureVariance.diff());
+    auto ddMeasureVariance = dMeasureVariance.diff.differentiate(
+        diffContext(measureVariance));
+    writefln("ddMeasureVariance: %s", ddMeasureVariance.diff());
+
+    auto dStateVariance = lf.differentiate(
+        diffContext(stateVariance));
+    writefln("dStateVariance: %s", dStateVariance.diff());
+    auto ddStateVariance = dStateVariance.diff.differentiate(
+        diffContext(stateVariance));
+    writefln("ddStateVariance: %s", ddStateVariance.diff());
 }
+

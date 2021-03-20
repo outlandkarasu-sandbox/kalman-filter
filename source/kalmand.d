@@ -57,14 +57,19 @@ struct KalmanFilter(F, P)
     {
         auto error = y - estimateMeasure_;
         auto errorVariance = estimateVariance_ * x.square + params_.measureVariance;
-        auto likelyhood = (log(errorVariance) + error.square / errorVariance);
-        likelyhood_ = (likelyhood_) ? (likelyhood_ + likelyhood) : likelyhood;
+        auto currentLikelyhood = (log(errorVariance) + error.square / errorVariance);
+        likelyhood_ = (likelyhood_) ? (likelyhood_ + currentLikelyhood) : currentLikelyhood;
 
         auto k = (x * estimateVariance_)
             / (x.square * estimateVariance_ + params_.measureVariance);
         state_ = estimateState_ + k * (y - estimateMeasure_);
         variance_ = (one_ - x * k) * estimateVariance_;
         return state_;
+    }
+
+    @property F likelyhood() const @nogc nothrow pure scope
+    {
+        return likelyhood_;
     }
 
 private:
