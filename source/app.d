@@ -34,18 +34,27 @@ void estimateAndFiltering()
 void parameterEstimation()
 {
     import std.stdio : writeln, writefln;
+    import diffengine : Differentiable, constant, param, Parameter, zero, one;
 
-    alias KF = KalmanFilter!(real, real);
+    alias KF = KalmanFilter!(const(Differentiable!real), const(Differentiable!real));
     alias Parameters = KF.Parameters;
 
+    auto tension = param!real(0.327438);
+    auto measureVariance = param!real(4.155^^2.0);
+    auto stateVariance = param!real(5.901^^2.0); 
+    auto zeroValue = zero!real();
     Parameters parameters = {
-        drift: 0.0,
-        tension: 0.327438,
-        cons: 0.0,
-        measureVariance: 4.155^^2.0,
-        stateVariance: 5.901^^2.0,
+        drift: zeroValue,
+        tension: tension,
+        cons: zeroValue,
+        measureVariance: measureVariance,
+        stateVariance: stateVariance,
     };
-    auto kalmanFilter = KF(parameters, 0.1, 100.0, 1.0);
+    auto kalmanFilter = KF(
+        parameters,
+        constant!real(0.1),
+        constant!real(100.0),
+        constant!real(1.0));
 
     immutable(real)[] data = [
         0.151,
@@ -62,10 +71,11 @@ void parameterEstimation()
         0.254
     ];
 
+    auto oneValue = one!real();
     foreach (d; data)
     {
-        auto ey = kalmanFilter.estimate(1.0);
-        kalmanFilter.filtering(1.0, d);
-        writefln("y: %s, ey: %s", d, ey);
+        auto ey = kalmanFilter.estimate(oneValue);
+        kalmanFilter.filtering(oneValue, d.constant);
+        writefln("y: %s, ey: %s", d, ey());
     }
 }

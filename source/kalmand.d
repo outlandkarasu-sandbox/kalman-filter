@@ -1,5 +1,8 @@
 module kalmand;
 
+import std.traits : isDynamicArray, isAssociativeArray;
+import std.typecons : Rebindable;
+
 import diffengine :
     Parameter,
     Differentiable,
@@ -8,6 +11,18 @@ import diffengine :
     log;
 
 @safe:
+
+private template RebindableType(T)
+{
+    static if (is(T == class) || is(T == interface) || isDynamicArray!T || isAssociativeArray!T)
+    {
+        alias RebindableType = Rebindable!T;
+    }
+    else
+    {
+        alias RebindableType = T;
+    }
+}
 
 struct KalmanFilter(F, P)
 {
@@ -42,7 +57,8 @@ struct KalmanFilter(F, P)
     {
         auto error = y - estimateMeasure_;
         auto errorVariance = estimateVariance_ * x.square + params_.measureVariance;
-        likelyhood_ = likelyhood_ + (log(errorVariance) + error.square / errorVariance);
+        auto likelyhood = (log(errorVariance) + error.square / errorVariance);
+        likelyhood_ = (likelyhood_) ? (likelyhood_ + likelyhood) : likelyhood;
 
         auto k = (x * estimateVariance_)
             / (x.square * estimateVariance_ + params_.measureVariance);
@@ -54,12 +70,12 @@ struct KalmanFilter(F, P)
 private:
     Parameters params_;
     F one_;
-    F state_;
-    F variance_;
+    RebindableType!F state_;
+    RebindableType!F variance_;
 
-    F estimateState_;
-    F estimateVariance_;
-    F estimateMeasure_;
-    F likelyhood_;
+    RebindableType!F estimateState_;
+    RebindableType!F estimateVariance_;
+    RebindableType!F estimateMeasure_;
+    RebindableType!F likelyhood_;
 }
 
