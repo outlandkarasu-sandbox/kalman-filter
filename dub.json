@@ -4,7 +4,7 @@
 	],
 	"copyright": "Copyright © 2021, outland.karasu@gmail.com",
 	"dependencies": {
-		"karasux": "~>0.0.5",
+		"karasux": "~>0.0.8",
 		"diffengine": {
 			"repository": "git+https://github.com/outlandkarasu/diffengine.git",
 			"version": "ea8b0e58b5c1c4859516562da39e10b61b0f7035"
