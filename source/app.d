@@ -34,7 +34,7 @@ void estimateAndFiltering()
 void parameterEstimation()
 {
     import std.stdio : writeln, writefln;
-    import diffengine : Differentiable, constant, param, Parameter, zero, one, diffContext;
+    import diffengine : Differentiable, constant, param, Parameter, zero, one, diffContext, evalContext;
 
     alias KF = KalmanFilter!(const(Differentiable!real), const(Differentiable!real));
     alias Parameters = KF.Parameters;
@@ -72,7 +72,7 @@ void parameterEstimation()
     ];
 
     auto oneValue = one!real();
-    foreach (d; data)
+    foreach (d; data[0 .. 12])
     {
         auto ey = kalmanFilter.estimate(oneValue);
         kalmanFilter.filtering(oneValue, d.constant);
@@ -82,23 +82,31 @@ void parameterEstimation()
     auto lf = kalmanFilter.likelyhood;
     auto dTension = lf.differentiate(
         diffContext(tension));
-    writefln("dTension: %s", dTension.diff());
-    auto ddTension = dTension.diff.differentiate(
+
+    auto ec = evalContext!real();
+    writefln("dTension: %s", ec.evaluate(dTension));
+    writefln("cache-hit: %s/%s", ec.cacheHitCount, ec.callCount);
+    auto ddTension = dTension.differentiate(
         diffContext(tension));
-    writefln("ddTension: %s", ddTension.diff());
+
+    ec = evalContext!real();
+    writefln("ddTension: %s", ec.evaluate(ddTension));
+    writefln("cache-hit: %s/%s", ec.cacheHitCount, ec.callCount);
 
     auto dMeasureVariance = lf.differentiate(
         diffContext(measureVariance));
-    writefln("dMeasureVariance: %s", dMeasureVariance.diff());
-    auto ddMeasureVariance = dMeasureVariance.diff.differentiate(
+    ec = evalContext!real();
+    writefln("dMeasureVariance: %s", ec.evaluate(dMeasureVariance));
+    auto ddMeasureVariance = dMeasureVariance.differentiate(
         diffContext(measureVariance));
-    writefln("ddMeasureVariance: %s", ddMeasureVariance.diff());
+    //writefln("ddMeasureVariance: %s", ddMeasureVariance());
 
     auto dStateVariance = lf.differentiate(
         diffContext(stateVariance));
-    writefln("dStateVariance: %s", dStateVariance.diff());
-    auto ddStateVariance = dStateVariance.diff.differentiate(
+    ec = evalContext!real();
+    writefln("dStateVariance: %s", ec.evaluate(dStateVariance));
+    auto ddStateVariance = dStateVariance.differentiate(
         diffContext(stateVariance));
-    writefln("ddStateVariance: %s", ddStateVariance.diff());
+    //writefln("ddStateVariance: %s", ddStateVariance());
 }
 
