@@ -7,7 +7,7 @@
 		"karasux": "~>0.0.8",
 		"diffengine": {
 			"repository": "git+https://github.com/outlandkarasu/diffengine.git",
-			"version": "ea8b0e58b5c1c4859516562da39e10b61b0f7035"
+			"version": "cc9c3937574d9f7e2e95a557da945083f6d5ae4d"
 		}
 	},
 	"description": "A kalman filter sample implementation.",

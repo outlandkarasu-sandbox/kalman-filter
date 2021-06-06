@@ -33,8 +33,10 @@ void estimateAndFiltering()
 
 void parameterEstimation()
 {
+    import std.array : appender;
     import std.stdio : writeln, writefln;
     import diffengine : Differentiable, constant, param, Parameter, zero, one, diffContext, evalContext;
+    import karasux.linear_algebra : Matrix, inverseByLUDecomposition;
 
     alias KF = KalmanFilter!(const(Differentiable!real), const(Differentiable!real));
     alias Parameters = KF.Parameters;
@@ -79,34 +81,71 @@ void parameterEstimation()
         writefln("y: %s, ey: %s", d, ey());
     }
 
+    import std.algorithm : map;
+
     auto lf = kalmanFilter.likelyhood;
-    auto dTension = lf.differentiate(
-        diffContext(tension));
+    auto variables = [tension, measureVariance, stateVariance];
+    auto dVariables = appender!(const(Differentiable!real)[])();
+    foreach (v; variables)
+    {
+        dVariables ~= lf.differentiate(v.diffContext);
+    }
 
-    auto ec = evalContext!real();
-    writefln("dTension: %s", ec.evaluate(dTension));
-    writefln("cache-hit: %s/%s", ec.cacheHitCount, ec.callCount);
-    auto ddTension = dTension.differentiate(
-        diffContext(tension));
+    auto hesseElements = appender!(const(Differentiable!real)[])();
+    foreach (i, d; dVariables)
+    {
+        foreach (j; 0 .. i)
+        {
+            hesseElements ~= hesseElements[][j * variables.length + i];
+        }
 
-    ec = evalContext!real();
-    writefln("ddTension: %s", ec.evaluate(ddTension));
-    writefln("cache-hit: %s/%s", ec.cacheHitCount, ec.callCount);
+        foreach (j, v; variables[i .. $])
+        {
+            hesseElements ~= d.differentiate(v.diffContext);
+        }
+    }
 
-    auto dMeasureVariance = lf.differentiate(
-        diffContext(measureVariance));
-    ec = evalContext!real();
-    writefln("dMeasureVariance: %s", ec.evaluate(dMeasureVariance));
-    auto ddMeasureVariance = dMeasureVariance.differentiate(
-        diffContext(measureVariance));
-    //writefln("ddMeasureVariance: %s", ddMeasureVariance());
+    Matrix!(3, 3, real) hesseMatrix;
+    auto currentParameters = Matrix!(3, 1, real).fromRows([
+       [tension.value],
+       [measureVariance.value],
+       [stateVariance.value],
+    ]);
+    Matrix!(3, 1, real) score;
+    Matrix!(3, 3, real) hesseMatrixInverse;
+    Matrix!(3, 1, real) offset;
 
-    auto dStateVariance = lf.differentiate(
-        diffContext(stateVariance));
-    ec = evalContext!real();
-    writefln("dStateVariance: %s", ec.evaluate(dStateVariance));
-    auto ddStateVariance = dStateVariance.differentiate(
-        diffContext(stateVariance));
-    //writefln("ddStateVariance: %s", ddStateVariance());
+    foreach (n; 0 .. 20)
+    {
+        auto ec = evalContext!real();
+        writefln("parameters: %s", currentParameters);
+        writefln("likelihood: %s", ec.evaluate(lf));
+
+        foreach (i, d; dVariables)
+        {
+            score[i, 0] = ec.evaluate(d);
+        }
+
+        foreach (i, e; hesseElements)
+        {
+            immutable row = i / variables.length;
+            immutable column = i % variables.length;
+            hesseMatrix[row, column] = ec.evaluate(e);
+        }
+
+        hesseMatrix.inverseByLUDecomposition(hesseMatrixInverse);
+        offset.mul(hesseMatrixInverse, score);
+        currentParameters -= offset;
+
+        writefln("score: %s", score);
+        writefln("hesse: %s", hesseMatrix);
+        writefln("hesse^-1: %s", hesseMatrixInverse);
+        writefln("offset: %s", offset);
+
+        foreach (i; 0 .. currentParameters.columns)
+        {
+            variables[i].bind(currentParameters[i, 0]);
+        }
+    }
 }
 
