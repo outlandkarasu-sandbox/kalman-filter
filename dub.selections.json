@@ -1,7 +1,7 @@
 {
 	"fileVersion": 1,
 	"versions": {
-		"diffengine": {"version":"cc9c3937574d9f7e2e95a557da945083f6d5ae4d","repository":"git+https://github.com/outlandkarasu/diffengine.git"},
+		"diffengine": {"version":"b3b136b21f73ef7c569f825287147ebb7936cc59","repository":"git+https://github.com/outlandkarasu/diffengine.git"},
 		"karasux": "0.0.8",
 		"lbfgsd": "1.1.0"
 	}
