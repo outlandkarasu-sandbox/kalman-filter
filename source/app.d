@@ -35,7 +35,16 @@ void parameterEstimation()
 {
     import std.array : appender;
     import std.stdio : writeln, writefln;
-    import diffengine : Differentiable, constant, param, Parameter, zero, one, diffContext, evalContext;
+    import diffengine :
+        Differentiable,
+        constant,
+        param,
+        Parameter,
+        zero,
+        one,
+        diffContext,
+        evalContext,
+        NewtonMethod;
     import karasux.linear_algebra : Matrix, inverseByLUDecomposition;
 
     alias KF = KalmanFilter!(const(Differentiable!real), const(Differentiable!real));
@@ -91,61 +100,14 @@ void parameterEstimation()
         dVariables ~= lf.differentiate(v.diffContext);
     }
 
-    auto hesseElements = appender!(const(Differentiable!real)[])();
-    foreach (i, d; dVariables)
+    scope newton = new NewtonMethod!(real, 3)(dVariables[], variables);
+    foreach (i; 0 .. 10)
     {
-        foreach (j; 0 .. i)
-        {
-            hesseElements ~= hesseElements[][j * variables.length + i];
-        }
+        newton.step();
 
-        foreach (j, v; variables[i .. $])
-        {
-            hesseElements ~= d.differentiate(v.diffContext);
-        }
-    }
-
-    Matrix!(3, 3, real) hesseMatrix;
-    auto currentParameters = Matrix!(3, 1, real).fromRows([
-       [tension.value],
-       [measureVariance.value],
-       [stateVariance.value],
-    ]);
-    Matrix!(3, 1, real) score;
-    Matrix!(3, 3, real) hesseMatrixInverse;
-    Matrix!(3, 1, real) offset;
-
-    foreach (n; 0 .. 20)
-    {
-        auto ec = evalContext!real();
-        writefln("parameters: %s", currentParameters);
+        scope ec = evalContext!real();
+        writefln("t: %s, mv: %s, sv: %s", tension.value, measureVariance.value, stateVariance.value);
         writefln("likelihood: %s", ec.evaluate(lf));
-
-        foreach (i, d; dVariables)
-        {
-            score[i, 0] = ec.evaluate(d);
-        }
-
-        foreach (i, e; hesseElements)
-        {
-            immutable row = i / variables.length;
-            immutable column = i % variables.length;
-            hesseMatrix[row, column] = ec.evaluate(e);
-        }
-
-        hesseMatrix.inverseByLUDecomposition(hesseMatrixInverse);
-        offset.mul(hesseMatrixInverse, score);
-        currentParameters -= offset;
-
-        writefln("score: %s", score);
-        writefln("hesse: %s", hesseMatrix);
-        writefln("hesse^-1: %s", hesseMatrixInverse);
-        writefln("offset: %s", offset);
-
-        foreach (i; 0 .. currentParameters.columns)
-        {
-            variables[i].bind(currentParameters[i, 0]);
-        }
     }
 }
 

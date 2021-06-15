@@ -33,6 +33,7 @@ struct KalmanFilter(F, P)
         P cons;
         P measureVariance;
         P stateVariance;
+        size_t likelihoodSkipCount = 0;
     }
 
     @disable this();
@@ -58,11 +59,16 @@ struct KalmanFilter(F, P)
         auto error = y - estimateMeasure_;
         auto errorVariance = estimateVariance_ * x.square + params_.measureVariance;
         auto currentLikelyhood = (log(errorVariance) + error.square / errorVariance);
-        likelyhood_ = (likelyhood_) ? (likelyhood_ + currentLikelyhood) : currentLikelyhood;
+
+        if (time_ >= params_.likelyhoodSkipCount)
+        {
+            likelyhood_ = (likelyhood_) ? (likelyhood_ + currentLikelyhood) : currentLikelyhood;
+        }
+        ++time_;
 
         auto k = (x * estimateVariance_)
             / (x.square * estimateVariance_ + params_.measureVariance);
-        state_ = estimateState_ + k * (y - estimateMeasure_);
+        state_ = estimateState_ + k * error;
         variance_ = (one_ - x * k) * estimateVariance_;
         return state_;
     }
@@ -82,5 +88,6 @@ private:
     RebindableType!F estimateVariance_;
     RebindableType!F estimateMeasure_;
     RebindableType!F likelyhood_;
+    size_t time_;
 }
 
