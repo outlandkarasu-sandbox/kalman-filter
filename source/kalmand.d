@@ -58,11 +58,11 @@ struct KalmanFilter(F, P)
     {
         auto error = y - estimateMeasure_;
         auto errorVariance = estimateVariance_ * x.square + params_.measureVariance;
-        auto currentLikelyhood = (log(errorVariance) + error.square / errorVariance);
+        auto currentLikelihood = (log(errorVariance) + error.square / errorVariance);
 
-        if (time_ >= params_.likelyhoodSkipCount)
+        if (time_ >= params_.likelihoodSkipCount)
         {
-            likelyhood_ = (likelyhood_) ? (likelyhood_ + currentLikelyhood) : currentLikelyhood;
+            likelihood_ = (likelihood_) ? (likelihood_ + currentLikelihood) : currentLikelihood;
         }
         ++time_;
 
@@ -73,9 +73,9 @@ struct KalmanFilter(F, P)
         return state_;
     }
 
-    @property F likelyhood() const @nogc nothrow pure scope
+    @property F likelihood() const @nogc nothrow pure scope
     {
-        return likelyhood_;
+        return likelihood_;
     }
 
 private:
@@ -87,7 +87,7 @@ private:
     RebindableType!F estimateState_;
     RebindableType!F estimateVariance_;
     RebindableType!F estimateMeasure_;
-    RebindableType!F likelyhood_;
+    RebindableType!F likelihood_;
     size_t time_;
 }
 
