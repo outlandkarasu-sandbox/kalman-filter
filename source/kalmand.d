@@ -62,7 +62,7 @@ struct KalmanFilter(F, P)
 
         auto k = (x * estimateVariance_)
             / (x.square * estimateVariance_ + params_.measureVariance);
-        state_ = estimateState_ + k * (y - estimateMeasure_);
+        state_ = estimateState_ + k * error;
         variance_ = (one_ - x * k) * estimateVariance_;
         return state_;
     }
